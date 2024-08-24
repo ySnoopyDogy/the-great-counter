@@ -5,26 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 
 const backgroundImages = [
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
-  "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=800&q=80",
-  "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
-];
-
-const carouselImages = [
-  "https://images.unsplash.com/photo-1529636798458-92182e662485?w=800&q=80",
-  "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=800&q=80",
-  "https://images.unsplash.com/photo-1460364157752-926555421a7e?w=800&q=80",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
-  "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=800&q=80",
+  "/images/photo-1519225421980-715cb0215aed.jpg",
+  "/images/photo-1469371670807-013ccf25f16a.jpg",
+  "/images/photo-1511285560929-80b456fea0bc.jpg",
 ];
 
 export default function Component() {
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const [imagesUrl, setImagesUrl] = useState<string[]>([]);
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [timeLeft, setTimeLeft] = useState({
@@ -50,7 +38,24 @@ export default function Component() {
   }, []);
 
   useEffect(() => {
+    const getImages = async () => {
+      const response = await fetch(
+        "https://cdn.menherabot.xyz/?marriage_reason=love"
+      );
+
+      const images = await response.json();
+      const imagesArray = Array.from({ length: images.emilyekaua }).map(
+        (_, i) =>
+          `https://cdn.menherabot.xyz/images/emilyekaua/${
+            i + 1
+          }.png?marriage_reason=love`
+      );
+
+      setImagesUrl(imagesArray);
+    };
+
     setCountdown();
+    getImages();
     setInterval(setCountdown, 1000);
     return () => clearInterval(carouselInterval.current);
   }, [setCountdown]);
@@ -70,10 +75,11 @@ export default function Component() {
     );
 
     const nextImage = () => {
-      setCurrentCarouselIndex((prevIndex) =>
-        prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
-      );
       carouselInterval.current = setTimeout(nextImage, 5000);
+      if (imagesUrl.length === 0) return;
+      setCurrentCarouselIndex((prevIndex) =>
+        prevIndex === imagesUrl.length - 1 ? 0 : prevIndex + 1
+      );
     };
 
     nextImage();
@@ -83,7 +89,7 @@ export default function Component() {
       clearInterval(backgroundInterval);
       clearInterval(progressInterval);
     };
-  }, []);
+  }, [imagesUrl.length]);
 
   const resetCarousel = () => {
     setProgress(0);
@@ -93,15 +99,19 @@ export default function Component() {
 
   const nextCarouselImage = () => {
     resetCarousel();
+
+    if (imagesUrl.length === 0) return;
     setCurrentCarouselIndex((prevIndex) =>
-      prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
+      prevIndex === imagesUrl.length - 1 ? 0 : prevIndex + 1
     );
   };
 
   const prevCarouselImage = () => {
     resetCarousel();
+
+    if (imagesUrl.length === 0) return;
     setCurrentCarouselIndex((prevIndex) =>
-      prevIndex === 0 ? carouselImages.length - 1 : prevIndex - 1
+      prevIndex === 0 ? imagesUrl.length - 1 : prevIndex - 1
     );
   };
 
@@ -145,60 +155,62 @@ export default function Component() {
             </div>
           ))}
         </div>
-        <div className="w-full max-w-3xl">
-          <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-            <AnimatePresence initial={false}>
-              <motion.img
-                key={currentCarouselIndex}
-                src={carouselImages[currentCarouselIndex]}
-                alt={`Foto do casal ${currentCarouselIndex + 1}`}
-                className="absolute h-full w-full object-cover"
-                initial={{ opacity: 0, x: 300 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -300 }}
-                transition={{ duration: 0.5 }}
-              />
-            </AnimatePresence>
-            <button
-              onClick={prevCarouselImage}
-              className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-pink-500/50 p-2 text-white hover:bg-pink-600/75"
-              aria-label="Foto anterior"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-            <button
-              onClick={nextCarouselImage}
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-blue-500/50 p-2 text-white hover:bg-blue-600/75"
-              aria-label="Próxima foto"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
-            <div className="absolute bottom-0 left-0 w-full bg-black/50 p-2">
-              <div className="flex items-center justify-between">
-                <div className="h-1 flex-grow rounded-full bg-gray-300">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-pink-500"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <div className="ml-4 flex space-x-2">
-                  {carouselImages.map((_, index) => (
+        {imagesUrl.length > 0 && (
+          <div className="w-full max-w-2xl">
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-lg">
+              <AnimatePresence initial={false}>
+                <motion.img
+                  key={currentCarouselIndex}
+                  src={imagesUrl[currentCarouselIndex]}
+                  alt={`Foto do casal ${currentCarouselIndex + 1}`}
+                  className="absolute h-full w-full object-cover"
+                  initial={{ opacity: 0, x: 300 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -300 }}
+                  transition={{ duration: 0.5 }}
+                />
+              </AnimatePresence>
+              <button
+                onClick={prevCarouselImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-pink-500/50 p-2 text-white hover:bg-pink-600/75"
+                aria-label="Foto anterior"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={nextCarouselImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-blue-500/50 p-2 text-white hover:bg-blue-600/75"
+                aria-label="Próxima foto"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+              <div className="absolute bottom-0 left-0 w-full bg-black/50 p-2">
+                <div className="flex items-center justify-between">
+                  <div className="h-1 flex-grow rounded-full bg-gray-300">
                     <div
-                      key={index}
-                      className={`h-2 w-2 rounded-full ${
-                        index === currentCarouselIndex
-                          ? index % 2 === 0
-                            ? "bg-pink-500"
-                            : "bg-blue-500"
-                          : "bg-gray-300"
-                      }`}
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-pink-500"
+                      style={{ width: `${progress}%` }}
                     />
-                  ))}
+                  </div>
+                  <div className="ml-4 flex space-x-2">
+                    {imagesUrl.map((_, index) => (
+                      <div
+                        key={index}
+                        className={`h-2 w-2 rounded-full ${
+                          index === currentCarouselIndex
+                            ? index % 2 === 0
+                              ? "bg-pink-500"
+                              : "bg-blue-500"
+                            : "bg-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
