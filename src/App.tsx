@@ -22,7 +22,7 @@ export default function Component() {
     segundos: 0,
   });
 
-  const carouselInterval = useRef<NodeJS.Timeout>();
+  const carouselInterval = useRef<NodeJS.Timeout | number>();
 
   const setCountdown = useCallback(() => {
     const weddingDate = new Date("2024-09-15T10:00:00");
@@ -38,6 +38,8 @@ export default function Component() {
   }, []);
 
   useEffect(() => {
+    let progressInterval: NodeJS.Timeout;
+
     const getImages = async () => {
       const response = await fetch(
         "https://cdn.menherabot.xyz/?marriage_reason=love"
@@ -54,11 +56,32 @@ export default function Component() {
       setImagesUrl(imagesArray);
     };
 
-    setCountdown();
-    getImages();
-    setInterval(setCountdown, 1000);
-    return () => clearInterval(carouselInterval.current);
-  }, [setCountdown]);
+    const nextImage = (first: boolean) => {
+      carouselInterval.current = setTimeout(nextImage, 5000);
+
+      if (imagesUrl.length === 0) return;
+
+      if (first) return;
+      setProgress(0);
+
+      setCurrentCarouselIndex((prevIndex) =>
+        prevIndex === imagesUrl.length - 1 ? 0 : prevIndex + 1
+      );
+    };
+
+    (async () => {
+      await getImages();
+      nextImage(true);
+
+      progressInterval = setInterval(() => {
+        setProgress((prevProgress) => (prevProgress + 0.5) % 100);
+      }, 25);
+    })();
+
+    return () => {
+      clearInterval(progressInterval);
+    };
+  }, [imagesUrl.length]);
 
   useEffect(() => {
     const backgroundInterval = setInterval(
@@ -69,27 +92,14 @@ export default function Component() {
       8000
     );
 
-    const progressInterval = setInterval(
-      () => setProgress((prevProgress) => (prevProgress + 0.5) % 100),
-      25
-    );
-
-    const nextImage = () => {
-      carouselInterval.current = setTimeout(nextImage, 5000);
-      if (imagesUrl.length === 0) return;
-      setCurrentCarouselIndex((prevIndex) =>
-        prevIndex === imagesUrl.length - 1 ? 0 : prevIndex + 1
-      );
-    };
-
-    nextImage();
+    setInterval(setCountdown, 1000);
+    setCountdown();
 
     return () => {
       clearTimeout(carouselInterval.current);
       clearInterval(backgroundInterval);
-      clearInterval(progressInterval);
     };
-  }, [imagesUrl.length]);
+  }, [setCountdown]);
 
   const resetCarousel = () => {
     setProgress(0);
